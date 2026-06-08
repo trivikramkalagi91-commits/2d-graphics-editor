@@ -1,0 +1,261 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); }
+#app { display: flex; gap: 0; height: 580px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); overflow: hidden; background: var(--color-background-primary); }
+#sidebar { width: 180px; min-width: 180px; border-right: 0.5px solid var(--color-border-tertiary); display: flex; flex-direction: column; background: var(--color-background-secondary); }
+#sidebar-title { padding: 12px 14px; font-size: 13px; font-weight: 500; color: var(--color-text-secondary); border-bottom: 0.5px solid var(--color-border-tertiary); letter-spacing: 0.05em; text-transform: uppercase; }
+.tool-btn { display: flex; align-items: center; gap: 10px; padding: 10px 14px; font-size: 14px; cursor: pointer; color: var(--color-text-primary); border: none; background: none; width: 100%; text-align: left; transition: background 0.1s; border-radius: 0; }
+.tool-btn:hover { background: var(--color-background-primary); }
+.tool-btn.active { background: var(--color-background-primary); color: var(--color-text-primary); font-weight: 500; border-right: 2px solid #534AB7; }
+.tool-btn i { font-size: 18px; color: var(--color-text-secondary); }
+.tool-btn.active i { color: #534AB7; }
+#tools-section { padding: 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+#props-section { padding: 12px 14px; flex: 1; display: flex; flex-direction: column; gap: 10px; }
+.prop-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 3px; }
+.prop-row { display: flex; flex-direction: column; }
+input[type=range] { width: 100%; }
+input[type=number] { width: 100%; padding: 4px 8px; font-size: 13px; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); background: var(--color-background-primary); color: var(--color-text-primary); }
+.char-toggle { display: flex; gap: 6px; }
+.char-btn { flex: 1; padding: 5px; font-size: 15px; font-family: var(--font-mono); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); background: var(--color-background-primary); cursor: pointer; color: var(--color-text-primary); transition: all 0.1s; }
+.char-btn.active { background: #534AB7; color: white; border-color: #534AB7; }
+#obj-list { border-top: 0.5px solid var(--color-border-tertiary); }
+#obj-list-title { padding: 10px 14px 6px; font-size: 12px; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+#obj-items { overflow-y: auto; max-height: 140px; }
+.obj-item { display: flex; align-items: center; justify-content: space-between; padding: 5px 14px; font-size: 13px; cursor: pointer; color: var(--color-text-primary); }
+.obj-item:hover { background: var(--color-background-primary); }
+.obj-item.selected { background: var(--color-background-primary); font-weight: 500; }
+.obj-del { background: none; border: none; color: var(--color-text-secondary); cursor: pointer; font-size: 16px; padding: 0 2px; }
+.obj-del:hover { color: #E24B4A; }
+#canvas-area { flex: 1; display: flex; flex-direction: column; }
+#canvas-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+#status { font-size: 12px; color: var(--color-text-secondary); margin-left: auto; }
+#canvas-container { flex: 1; overflow: auto; display: flex; align-items: center; justify-content: center; background: var(--color-background-tertiary); }
+canvas { background: #fff; cursor: crosshair; border: 0.5px solid var(--color-border-tertiary); image-rendering: pixelated; }
+.icon-btn { background: none; border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 5px 10px; cursor: pointer; font-size: 13px; color: var(--color-text-primary); display: flex; align-items: center; gap: 5px; }
+.icon-btn:hover { background: var(--color-background-secondary); }
+</style>
+
+<h2 class="sr-only">2D graphics editor — draw circles, rectangles, lines and triangles on a character canvas using * and _ symbols</h2>
+
+<div id="app">
+  <div id="sidebar">
+    <div id="sidebar-title">Tools</div>
+    <div id="tools-section">
+      <button class="tool-btn active" data-tool="circle" onclick="setTool('circle')"><i class="ti ti-circle" aria-hidden="true"></i>Circle</button>
+      <button class="tool-btn" data-tool="rectangle" onclick="setTool('rectangle')"><i class="ti ti-square" aria-hidden="true"></i>Rectangle</button>
+      <button class="tool-btn" data-tool="line" onclick="setTool('line')"><i class="ti ti-line" aria-hidden="true"></i>Line</button>
+      <button class="tool-btn" data-tool="triangle" onclick="setTool('triangle')"><i class="ti ti-triangle" aria-hidden="true"></i>Triangle</button>
+    </div>
+    <div id="props-section">
+      <div class="prop-row">
+        <div class="prop-label">Character</div>
+        <div class="char-toggle">
+          <button class="char-btn active" onclick="setChar('*')">*</button>
+          <button class="char-btn" onclick="setChar('_')">_</button>
+        </div>
+      </div>
+      <div class="prop-row" id="size-row">
+        <div class="prop-label">Size / Radius</div>
+        <input type="range" id="size-slider" min="2" max="20" value="8" oninput="document.getElementById('size-val').textContent=this.value">
+        <span style="font-size:12px;color:var(--color-text-secondary)" id="size-val">8</span>
+      </div>
+    </div>
+    <div id="obj-list">
+      <div id="obj-list-title">Objects</div>
+      <div id="obj-items"></div>
+    </div>
+  </div>
+
+  <div id="canvas-area">
+    <div id="canvas-toolbar">
+      <button class="icon-btn" onclick="clearCanvas()"><i class="ti ti-trash" aria-hidden="true"></i>Clear</button>
+      <button class="icon-btn" onclick="exportCanvas()"><i class="ti ti-download" aria-hidden="true"></i>Export text</button>
+      <span id="status">Click or drag on canvas to draw</span>
+    </div>
+    <div id="canvas-container">
+      <canvas id="cv" width="800" height="480"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLS = 80, ROWS = 40, CELL = 10;
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+cv.width = COLS * CELL;
+cv.height = ROWS * CELL;
+
+let grid = Array.from({length: ROWS}, () => Array(COLS).fill(' '));
+let objects = [], nextId = 1, selectedId = null;
+let tool = 'circle', fillChar = '*';
+let drawing = false, startX = 0, startY = 0, triPts = [], triStep = 0;
+
+function setTool(t) {
+  tool = t; triPts = []; triStep = 0;
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.toggle('active', b.dataset.tool === t));
+  setStatus('Click on canvas to draw a ' + t);
+}
+function setChar(c) {
+  fillChar = c;
+  document.querySelectorAll('.char-btn').forEach(b => b.classList.toggle('active', b.textContent === c));
+}
+
+function cellXY(e) {
+  const r = cv.getBoundingClientRect();
+  const scaleX = cv.width / r.width;
+  const scaleY = cv.height / r.height;
+  return [
+    Math.floor((e.clientX - r.left) * scaleX / CELL),
+    Math.floor((e.clientY - r.top) * scaleY / CELL)
+  ];
+}
+
+function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+function putPixel(row, col, ch) {
+  if (row >= 0 && row < ROWS && col >= 0 && col < COLS) grid[row][col] = ch;
+}
+
+function drawCircleAlgo(cx, cy, r, ch) {
+  let x = 0, y = r, d = 1 - r;
+  while (x <= y) {
+    [[cy+y,cx+x],[cy-y,cx+x],[cy+y,cx-x],[cy-y,cx-x],
+     [cy+x,cx+y],[cy-x,cx+y],[cy+x,cx-y],[cy-x,cx-y]].forEach(([rr,cc]) => putPixel(rr,cc,ch));
+    if (d < 0) d += 2*x+3; else { d += 2*(x-y)+5; y--; }
+    x++;
+  }
+}
+function drawRectAlgo(x, y, w, h, ch) {
+  for (let c = x; c < x+w; c++) { putPixel(y,c,ch); putPixel(y+h-1,c,ch); }
+  for (let r = y; r < y+h; r++) { putPixel(r,x,ch); putPixel(r,x+w-1,ch); }
+}
+function drawLineAlgo(x0,y0,x1,y1,ch) {
+  let dx=Math.abs(x1-x0),dy=Math.abs(y1-y0),sx=x0<x1?1:-1,sy=y0<y1?1:-1,err=dx-dy;
+  while(true){putPixel(y0,x0,ch);if(x0===x1&&y0===y1)break;let e2=2*err;if(e2>-dy){err-=dy;x0+=sx;}if(e2<dx){err+=dx;y0+=sy;}}
+}
+function drawTriAlgo(pts, ch) {
+  drawLineAlgo(pts[0][0],pts[0][1],pts[1][0],pts[1][1],ch);
+  drawLineAlgo(pts[1][0],pts[1][1],pts[2][0],pts[2][1],ch);
+  drawLineAlgo(pts[2][0],pts[2][1],pts[0][0],pts[0][1],ch);
+}
+
+function renderGrid() {
+  grid = Array.from({length: ROWS}, () => Array(COLS).fill(' '));
+  objects.forEach(o => {
+    if (o.type==='circle') drawCircleAlgo(o.cx,o.cy,o.r,o.ch);
+    else if (o.type==='rectangle') drawRectAlgo(o.x,o.y,o.w,o.h,o.ch);
+    else if (o.type==='line') drawLineAlgo(o.x1,o.y1,o.x2,o.y2,o.ch);
+    else if (o.type==='triangle') drawTriAlgo([[o.x1,o.y1],[o.x2,o.y2],[o.x3,o.y3]],o.ch);
+  });
+}
+
+function paint() {
+  ctx.clearRect(0,0,cv.width,cv.height);
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0,0,cv.width,cv.height);
+  ctx.font = `${CELL}px monospace`;
+  ctx.textBaseline = 'top';
+  for (let r=0; r<ROWS; r++) {
+    for (let c=0; c<COLS; c++) {
+      const ch = grid[r][c];
+      if (ch !== ' ') {
+        ctx.fillStyle = ch === '*' ? '#534AB7' : '#E24B4A';
+        ctx.fillText(ch, c*CELL, r*CELL);
+      }
+    }
+  }
+  ctx.strokeStyle = '#eee';
+  ctx.lineWidth = 0.3;
+  for (let r=0;r<=ROWS;r++){ctx.beginPath();ctx.moveTo(0,r*CELL);ctx.lineTo(cv.width,r*CELL);ctx.stroke();}
+  for (let c=0;c<=COLS;c++){ctx.beginPath();ctx.moveTo(c*CELL,0);ctx.lineTo(c*CELL,cv.height);ctx.stroke();}
+}
+
+function refresh() { renderGrid(); paint(); renderObjList(); }
+
+function addObject(obj) {
+  obj.id = nextId++;
+  objects.push(obj);
+  refresh();
+}
+
+cv.addEventListener('mousedown', e => {
+  const [cx, cy] = cellXY(e);
+  const sz = parseInt(document.getElementById('size-slider').value);
+
+  if (tool === 'triangle') {
+    triPts.push([cx, cy]);
+    if (triPts.length === 3) {
+      addObject({type:'triangle',x1:triPts[0][0],y1:triPts[0][1],x2:triPts[1][0],y2:triPts[1][1],x3:triPts[2][0],y3:triPts[2][1],ch:fillChar});
+      triPts = [];
+      setStatus('Triangle added! Click 3 points for the next one.');
+    } else {
+      setStatus(`Vertex ${triPts.length}/3 placed — click next vertex`);
+    }
+    return;
+  }
+
+  drawing = true;
+  startX = cx; startY = cy;
+
+  if (tool === 'circle') {
+    addObject({type:'circle', cx, cy, r: sz, ch: fillChar});
+  }
+});
+
+cv.addEventListener('mouseup', e => {
+  if (!drawing) return;
+  const [ex, ey] = cellXY(e);
+  drawing = false;
+  if (tool === 'rectangle') {
+    const x = Math.min(startX, ex), y = Math.min(startY, ey);
+    const w = Math.max(2, Math.abs(ex-startX)+1), h = Math.max(2, Math.abs(ey-startY)+1);
+    addObject({type:'rectangle', x, y, w, h, ch: fillChar});
+  } else if (tool === 'line') {
+    addObject({type:'line', x1:startX, y1:startY, x2:ex, y2:ey, ch:fillChar});
+  }
+});
+
+cv.addEventListener('mousemove', e => {
+  const [cx, cy] = cellXY(e);
+  setStatus(`col ${cx}, row ${cy}`);
+});
+
+function clearCanvas() {
+  objects = []; grid = Array.from({length: ROWS}, () => Array(COLS).fill(' '));
+  triPts = []; refresh();
+  setStatus('Canvas cleared');
+}
+
+function exportCanvas() {
+  renderGrid();
+  const text = grid.map(row => row.join('')).join('\n');
+  const blob = new Blob([text], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'canvas.txt';
+  a.click();
+}
+
+function deleteObject(id) {
+  objects = objects.filter(o => o.id !== id);
+  if (selectedId === id) selectedId = null;
+  refresh();
+}
+
+function renderObjList() {
+  const el = document.getElementById('obj-items');
+  if (objects.length === 0) { el.innerHTML = '<div style="padding:6px 14px;font-size:12px;color:var(--color-text-secondary)">No objects yet</div>'; return; }
+  const names = {circle:'Circle',rectangle:'Rect',line:'Line',triangle:'Tri'};
+  el.innerHTML = objects.map(o =>
+    `<div class="obj-item${o.id===selectedId?' selected':''}" onclick="selectedId=${o.id}">
+      <span>${names[o.type]} #${o.id} <span style="font-family:var(--font-mono);color:${o.ch==='*'?'#534AB7':'#E24B4A'}">${o.ch}</span></span>
+      <button class="obj-del" onclick="event.stopPropagation();deleteObject(${o.id})" aria-label="Delete"><i class="ti ti-x"></i></button>
+    </div>`
+  ).join('');
+}
+
+function setStatus(msg) { document.getElementById('status').textContent = msg; }
+
+setStatus('Select a tool, then click on the canvas');
+refresh();
+</script>
