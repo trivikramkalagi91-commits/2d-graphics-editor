@@ -1,7 +1,5 @@
 #include "graphics.h"
 
-/* ── Add sub-menu ───────────────────────────────────────────────── */
-
 void menu_add(void)
 {
     print_header("ADD OBJECT");
@@ -60,8 +58,6 @@ void menu_add(void)
     }
 }
 
-/* ── Delete sub-menu ────────────────────────────────────────────── */
-
 void menu_delete(void)
 {
     print_header("DELETE OBJECT");
@@ -72,8 +68,6 @@ void menu_delete(void)
     if (id != 0)
         obj_delete(id);
 }
-
-/* ── Modify sub-menu ────────────────────────────────────────────── */
 
 void menu_modify(void)
 {
@@ -86,8 +80,6 @@ void menu_modify(void)
         obj_modify(id);
 }
 
-/* ── Main menu loop ─────────────────────────────────────────────── */
-
 void menu_main(void)
 {
     canvas_clear();
@@ -97,21 +89,21 @@ void menu_main(void)
         clear_screen();
 
         printf("\n");
-        printf("  ╔══════════════════════════════════╗\n");
-        printf("  ║   2D GRAPHICS EDITOR  (*/_ mode) ║\n");
-        printf("  ╚══════════════════════════════════╝\n\n");
+        printf("  ===================================\n");
+        printf("     2D GRAPHICS EDITOR  (*/_ mode)\n");
+        printf("  ===================================\n\n");
 
         canvas_display();
 
         printf("\n");
-        printf("  ┌─── MENU ─────────────────────────┐\n");
-        printf("  │  1. Add object                   │\n");
-        printf("  │  2. Delete object                │\n");
-        printf("  │  3. Modify object                │\n");
-        printf("  │  4. List all objects             │\n");
-        printf("  │  5. Clear canvas                 │\n");
-        printf("  │  0. Quit                         │\n");
-        printf("  └──────────────────────────────────┘\n");
+        printf("  -----------------------------------\n");
+        printf("    1. Add object\n");
+        printf("    2. Delete object\n");
+        printf("    3. Modify object\n");
+        printf("    4. List all objects\n");
+        printf("    5. Clear canvas\n");
+        printf("    0. Quit\n");
+        printf("  -----------------------------------\n");
 
         int choice = read_int("\n  Choice: ");
 
@@ -132,7 +124,6 @@ void menu_main(void)
                 getchar();
                 break;
             case 5:
-                /* Remove all objects */
                 obj_count = 0;
                 canvas_clear();
                 printf("Canvas cleared.\n");
